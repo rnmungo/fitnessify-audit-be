@@ -231,4 +231,8 @@ _Pvt_Extensions
 # FAKE - F# Make
 .fake/
 
+# Logs
+**/Logs.txt
+
+# Local configurations
 **/appsettings.Development.json
