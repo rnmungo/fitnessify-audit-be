@@ -2,7 +2,7 @@
 {
     public class Paged<T>
     {
-        public List<T> Results { get; set; }
+        public IEnumerable<T> Results { get; set; }
         public int CurrentPage { get; set; }
         public int SizeLimit { get; set; }
         public int Total { get; set; }
@@ -11,10 +11,10 @@
 
         public Paged()
         {
-            Results = new List<T>();
+            Results = Enumerable.Empty<T>();
         }
 
-        public Paged(List<T> results, int currentPage, int sizeLimit, int total)
+        public Paged(IEnumerable<T> results, int currentPage, int sizeLimit, int total)
         {
             Results = results;
             CurrentPage = currentPage;

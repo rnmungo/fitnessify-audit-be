@@ -3,6 +3,7 @@ using Audits.Domain.Entities;
 using Audits.Domain.Models;
 using Audits.Infrastructure.BBDD.Contracts;
 using Audits.Business.Contracts;
+using System.Collections.Immutable;
 
 namespace Audits.Business.Services
 {
@@ -34,15 +35,15 @@ namespace Audits.Business.Services
             }
 
             IOrderedQueryable<AuditModel> orderedQuery = query.OrderByDescending(audit => audit.CreatedAt);
-            List<AuditModel> pagedElements = orderedQuery.Skip((currentPage - 1) * size).Take(size).ToList();
-            List<AuditModel> totalElements = orderedQuery.ToList();
+            IEnumerable<AuditModel> pagedElements = orderedQuery.Skip((currentPage - 1) * size).Take(size).ToImmutableArray();
+            int totalElements = orderedQuery.Count();
             List<Audit> audits = _mapper.Map<List<Audit>>(pagedElements);
             return new Paged<Audit>()
             {
                 Results = audits,
                 CurrentPage = currentPage,
                 SizeLimit = size,
-                Total = totalElements.Count,
+                Total = totalElements,
             };
         }
 
