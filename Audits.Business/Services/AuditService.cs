@@ -1,9 +1,9 @@
-﻿using AutoMapper;
+﻿using System.Collections.Immutable;
+using AutoMapper;
 using Audits.Domain.Entities;
 using Audits.Domain.Models;
 using Audits.Infrastructure.BBDD.Contracts;
 using Audits.Business.Contracts;
-using System.Collections.Immutable;
 
 namespace Audits.Business.Services
 {
