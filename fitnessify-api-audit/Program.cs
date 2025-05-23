@@ -1,16 +1,18 @@
-using AutoMapper;
-using Microsoft.AspNetCore.HttpOverrides;
-using MongoDB.Driver;
-using Serilog;
-using Serilog.Events;
 using Audits.Business.Contracts;
 using Audits.Business.Mappers;
 using Audits.Business.Services;
 using Audits.Domain.Models;
 using Audits.Infrastructure.BBDD.Contracts;
 using Audits.Infrastructure.BBDD.Repositories;
+using AutoMapper;
 using fitnessify_api_audit.Mappers;
 using fitnessify_api_audit.MiddleWares;
+using Microsoft.AspNetCore.HttpOverrides;
+using MongoDB.Driver;
+using NpgsqlTypes;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.PostgreSQL;
 
 internal class Program
 {
@@ -19,6 +21,16 @@ internal class Program
         var builder = WebApplication.CreateBuilder(args);
 
         #region Configure Logger
+        var columnOptions = new Dictionary<string, ColumnWriterBase>
+        {
+            { "message", new RenderedMessageColumnWriter(NpgsqlDbType.Text) },
+            { "level", new LevelColumnWriter(renderAsText: true, dbType: NpgsqlDbType.Text) },
+            { "timestamp", new TimestampColumnWriter(dbType: NpgsqlDbType.Timestamp) },
+            { "exception", new ExceptionColumnWriter(NpgsqlDbType.Text) },
+            { "log_event", new LogEventSerializedColumnWriter(NpgsqlDbType.Jsonb) },
+            { "application_id", new SinglePropertyColumnWriter("application_id", PropertyWriteMethod.Raw) },
+            { "tenant_name", new SinglePropertyColumnWriter("tenant_name", PropertyWriteMethod.Raw) },
+        };
         Log.Logger = new LoggerConfiguration()
             .Filter.ByExcluding(logEvent =>
             {
@@ -35,8 +47,11 @@ internal class Program
             .WriteTo.PostgreSQL(
                 connectionString: builder.Configuration.GetConnectionString("PostgreSQL") ?? "",
                 tableName: builder.Configuration["Serilog:PostgreSQL:TableName"],
-                needAutoCreateTable: true,
+                columnOptions: columnOptions,
+                needAutoCreateTable: false,
                 schemaName: builder.Configuration["Serilog:PostgreSQL:SchemaName"])
+            .Enrich.WithProperty("application_id", "api-audit", destructureObjects: true)
+            .Enrich.WithProperty("tenant_name", "", destructureObjects: true)
             .AuditTo.File("Logs.txt", outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
         builder.Services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog());
